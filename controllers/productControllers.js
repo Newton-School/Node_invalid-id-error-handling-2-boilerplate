@@ -1,93 +1,76 @@
 const Product = require('../models/Product');
+const AppError = require("../utils/AppError");
 
 const handleAsyncErrors = (asyncFn) => {
-  return (req, res, next) => {
-    asyncFn(req, res, next).catch((err) => {
-      if (err.name === 'CastError') {
-        if (err.kind === 'ObjectId') {
-          return res.status(404).json({
-            status: 'Error',
-            message: 'Invalid ID',
-          });
-        }
-      }
-
-      if (err instanceof mongoose.Error.DocumentNotFoundError) {
-        // Handling not found errors
-        return res.status(404).json({
+    return (req, res, next) => {
+      asyncFn(req, res, next).catch((err) => {
+        res.status(500).json({
           status: 'Error',
-          message: 'Resource not found',
+          message: 'Internal Server Error',
+          error: err.message,
         });
-      }
-
-      // Handling other errors
-      res.status(500).json({
-        status: 'Error',
-        message: 'Internal Server Error',
-        error: err.message,
       });
-    });
+    };
   };
-};
 
 /*
-Write a error handler to handle to invalid ID errors.
-If the ID is invalid, return a 400 status code with the following JSON response:
+Make the necessary changes to the controller to return error 400 using the AppError error handling function, when an invalid Id is requested.
+
+Status Code: 400
 {
-  status: 'Error',
-  message: 'Invalid ID'
+  error: "Invalid ID"
+}
+
+When product is not found
+Status Code: 404
+{
+  error: "Product Not Found"
 }
 */
 
 
-const searchProducts = handleAsyncErrors(async (req, res) => {
-  const { page = 1, limit = 10, search, category, sort, minPrice, maxPrice } = req.query;
-  const query = {};
-  if (search) {
-    query.name = { $regex: search, $options: 'i' };
-  }
-  if (category) {
-    query.category = category;
-  }
-  if (minPrice && maxPrice) {
-    query.price = { $gte: minPrice, $lte: maxPrice };
-  } else if (minPrice) {
-    query.price = { $gte: minPrice };
-  } else if (maxPrice) {
-    query.price = { $lte: maxPrice };
-  }
-  const sortOrder = sort === 'asc' ? 'price' : '-price';
-
-  const products = await Product.find(query)
-    .limit(limit * 1)
-    .skip((page - 1) * limit)
-    .sort(sortOrder);
-  const count = await Product.countDocuments(query);
-
-  res.status(200).json({
-    status: 'success',
-    data: {
-      count,
-      products,
-    },
-  });
-});
-
 const getProductByID = handleAsyncErrors(async (req, res) => {
-  const product = await Product.findById(req.params.id);
-  if (!product) {
-    return res.status(404).json({
-      status: 'Error',
-      message: 'Product Not Found',
-    });
-  }
+  const id = req.params.id;
+  //Handle Errors
   res.status(200).json({
-    status: 'success',
-    data: {
-      product,
-    },
+      status: 'success',
+      data: {
+          product,
+      },
   });
 });
 
+const searchProducts = handleAsyncErrors(async (req, res) => {
+    const { page = 1, limit = 10, search, category, sort, minPrice, maxPrice } = req.query;
+    const query = {};
+    if (search) {
+        query.name = { $regex: search, $options: 'i' };
+    }
+    if (category) {
+        query.category = category;
+    }
+    if (minPrice && maxPrice) {
+        query.price = { $gte: minPrice, $lte: maxPrice };
+    } else if (minPrice) {
+        query.price = { $gte: minPrice };
+    } else if (maxPrice) {
+        query.price = { $lte: maxPrice };
+    }
+    const sortOrder = sort === 'asc' ? 'price' : '-price';
+
+    const products = await Product.find(query)
+        .limit(limit * 1)
+        .skip((page - 1) * limit)
+        .sort(sortOrder);
+    const count = await Product.countDocuments(query);
+
+    res.status(200).json({
+        status: 'success',
+        data: {
+            count,
+            products,
+        },
+    });
+});
 
 module.exports = { searchProducts, getProductByID };
