@@ -15,13 +15,11 @@ const handleAsyncErrors = (asyncFn) => {
 
 /*
 Make the necessary changes to the controller to return error 400 using the AppError error handling function, when an invalid Id is requested.
-
 Status Code: 400
 {
   error: "Invalid ID"
 }
 
-When product is not found
 Status Code: 404
 {
   error: "Product Not Found"
@@ -31,13 +29,7 @@ Status Code: 404
 
 const getProductByID = handleAsyncErrors(async (req, res) => {
   const id = req.params.id;
-  //Handle Errors
-  res.status(200).json({
-      status: 'success',
-      data: {
-          product,
-      },
-  });
+  //Write your code here
 });
 
 const searchProducts = handleAsyncErrors(async (req, res) => {
